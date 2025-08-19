@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple E-Commerce Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <header class="bg-white shadow-md py-4 px-6 mb-8 rounded-b-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-800">My Store</h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-gray-600">Welcome, User!</span>
+                <button id="cartBtn" class="relative bg-gray-200 hover:bg-gray-300 transition px-4 py-2 rounded-lg font-medium">
+                    Cart
+                    <span id="cartCount" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-6 py-4">
+
+        <!-- Product List Section -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Products</h2>
+            <div id="products-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Products will be dynamically loaded here -->
+            </div>
+        </section>
+
+        <!-- Cart Section (Hidden by default) -->
+        <section id="cart-section" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-700">Shopping Cart</h3>
+                    <button id="closeCartBtn" class="text-gray-500 hover:text-gray-800 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div id="cart-items" class="space-y-4 max-h-80 overflow-y-auto pr-4">
+                    <p class="text-gray-500 text-center">Your cart is empty.</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <span class="text-lg font-bold text-gray-700">Total: $<span id="cart-total">0.00</span></span>
+                    <button class="bg-indigo-600 hover:bg-indigo-700 transition text-white font-bold py-2 px-6 rounded-lg shadow-lg">
+                        Checkout
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white shadow-inner mt-8 py-4 px-6 text-center text-gray-500 rounded-t-lg">
+        &copy; 2024 My Store. All rights reserved.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const productsContainer = document.getElementById('products-container');
+            const cartCountSpan = document.getElementById('cartCount');
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartTotalSpan = document.getElementById('cart-total');
+            const cartBtn = document.getElementById('cartBtn');
+            const cartSection = document.getElementById('cart-section');
+            const closeCartBtn = document.getElementById('closeCartBtn');
+
+            let cart = [];
+
+            // Function to fetch and display products
+            const fetchProducts = async () => {
+                try {
+                    // Changed the URL to a full path to ensure it works correctly with a local server
+                    const response = await fetch('http://localhost:8080/ecommerce-backend/products');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch products');
+                    }
+                    const products = await response.json();
+                    productsContainer.innerHTML = '';
+                    products.forEach(product => {
+                        const productCard = createProductCard(product);
+                        productsContainer.appendChild(productCard);
+                    });
+                } catch (error) {
+                    console.error('Error fetching products:', error);
+                    // Fallback to mock data if fetching from the server fails
+                    const mockProducts = [
+                        { id: 1, name: 'Wireless Mouse', description: 'Ergonomic design with silent clicks.', price: 25.00, image_url: 'https://placehold.co/400x300/e879f9/ffffff?text=Mouse' },
+                        { id: 2, name: 'Mechanical Keyboard', description: 'RGB backlit with satisfying key presses.', price: 85.00, image_url: 'https://placehold.co/400x300/4f46e5/ffffff?text=Keyboard' },
+                        { id: 3, name: 'USB-C Hub', description: 'All-in-one hub with multiple ports.', price: 40.00, image_url: 'https://placehold.co/400x300/10b981/ffffff?text=USB+Hub' },
+                        { id: 4, name: 'Webcam 1080p', description: 'Crystal clear video for calls.', price: 50.00, image_url: 'https://placehold.co/400x300/f59e0b/ffffff?text=Webcam' },
+                    ];
+                    productsContainer.innerHTML = ''; // Clear previous content
+                    mockProducts.forEach(product => {
+                        const productCard = createProductCard(product);
+                        productsContainer.appendChild(productCard);
+                    });
+                }
+            };
+
+            const createProductCard = (product) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-lg overflow-hidden flex flex-col items-center p-4';
+                card.innerHTML = `
+                    <img src="${product.image_url}" alt="${product.name}" class="w-full h-48 object-cover rounded-lg mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-1">${product.name}</h3>
+                    <p class="text-gray-600 text-center mb-4 text-sm">${product.description}</p>
+                    <span class="text-indigo-600 text-2xl font-bold mb-4">$${product.price.toFixed(2)}</span>
+                    <button class="add-to-cart-btn bg-indigo-500 hover:bg-indigo-600 transition text-white px-6 py-2 rounded-full font-semibold w-full" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}">
+                        Add to Cart
+                    </button>
+                `;
+                return card;
+            };
+
+            // Event listener for adding items to the cart
+            productsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('add-to-cart-btn')) {
+                    const id = e.target.dataset.id;
+                    const name = e.target.dataset.name;
+                    const price = parseFloat(e.target.dataset.price);
+
+                    const existingItem = cart.find(item => item.id === id);
+                    if (existingItem) {
+                        existingItem.quantity++;
+                    } else {
+                        cart.push({ id, name, price, quantity: 1 });
+                    }
+                    updateCartDisplay();
+                }
+            });
+
+            // Function to update the cart UI
+            const updateCartDisplay = () => {
+                cartCountSpan.textContent = cart.reduce((total, item) => total + item.quantity, 0);
+                cartItemsContainer.innerHTML = '';
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = '<p class="text-gray-500 text-center">Your cart is empty.</p>';
+                } else {
+                    cart.forEach(item => {
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'flex justify-between items-center';
+                        itemElement.innerHTML = `
+                            <span class="font-medium text-gray-700">${item.name} x ${item.quantity}</span>
+                            <span class="text-gray-600">$${(item.price * item.quantity).toFixed(2)}</span>
+                        `;
+                        cartItemsContainer.appendChild(itemElement);
+                    });
+                }
+                const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                cartTotalSpan.textContent = total.toFixed(2);
+            };
+
+            // Event listeners for opening and closing the cart
+            cartBtn.addEventListener('click', () => {
+                cartSection.classList.remove('hidden');
+            });
+            closeCartBtn.addEventListener('click', () => {
+                cartSection.classList.add('hidden');
+            });
+
+            // Initial load of products
+            fetchProducts();
+        });
+    </script>
+</body>
+</html>
